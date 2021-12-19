@@ -11,5 +11,7 @@ module haypsilcn.bankappproject {
     requires eu.hansolo.tilesfx;
 
     opens haypsilcn.bankappproject to javafx.fxml;
+    opens bank;
+    exports bank;
     exports haypsilcn.bankappproject;
 }
