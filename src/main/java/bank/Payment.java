@@ -66,6 +66,6 @@ public class Payment extends Transaction {
     }
 
     public String toString() {
-        return super.toString() + ", Incoming interest: " + this.getIncomingInterest() + ", Outgoing interest: " + this.getOutgoingInterest();
+        return super.toString() + ", Incoming interest: " + this.getIncomingInterest() + ", Outgoing interest: " + this.getOutgoingInterest() + "\n";
     }
 }

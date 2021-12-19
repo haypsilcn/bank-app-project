@@ -18,7 +18,7 @@ public class Bank {
     private String directory = "data";
     private double incomingInterest;
     private double outgoingInterest;
-    private Map<String, List<Transaction>> accountsToTransactions = new HashMap<>();
+    private final Map<String, List<Transaction>> accountsToTransactions = new HashMap<>();
 
     public String getName() {
         return name;
@@ -160,7 +160,7 @@ public class Bank {
         Path path = Path.of(this.getDirectory() + "/" + account + ".json");
 
         if (Files.exists(path)) {
-            System.out.print("\nAdding <" + account + "> from the data system to bank <" + this.getName() + "> " );
+            System.out.print("\nAdding <" + account + "> from data system to bank <" + this.getName() + "> " );
             if (accountsToTransactions.containsKey(account))
                 throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT <" + account + "> ALREADY EXISTS!\n");
             else {
@@ -183,7 +183,7 @@ public class Bank {
         String transactionsString = transactionsList.toString().replaceAll("[]]|[\\[]", "").replace("\n, ", "\n\t\t");
 
         if (Files.exists(path)) {
-            System.out.print("\nAdding <" + account + "> from the data system to bank <" + this.getName() + "> with transactions list: \n\t\t" + transactionsString);
+            System.out.print("\nAdding <" + account + "> from data system to bank <" + this.getName() + "> with transactions list: \n\t\t" + transactionsString);
             if (accountsToTransactions.containsKey(account))
                 throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT <" + account + "> ALREADY EXISTS!\n");
             else {
@@ -231,6 +231,7 @@ public class Bank {
                 System.out.println("=> SUCCESS!");
             }
         }
+
     }
 
     public void removeTransaction(String account, Transaction transaction) throws TransactionDoesNotExistException, IOException {
@@ -324,7 +325,7 @@ public class Bank {
         StringBuilder str = new StringBuilder();
         Set<String> setKey = accountsToTransactions.keySet();
         for (String key : setKey) {
-            str.append(key).append(" => \n");
+            str.append("[").append(key).append("] => \n");
             List<Transaction> transactionsList = accountsToTransactions.get(key);
             for (Transaction transaction : transactionsList)
                 str.append("\t\t").append(transaction);

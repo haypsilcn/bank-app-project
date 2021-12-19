@@ -57,6 +57,6 @@ public abstract class Transfer extends Transaction {
     }
 
     public String toString() {
-        return super.toString() + ", Sender: " + this.getSender() + ", Recipient: " + this.getRecipient();
+        return super.toString() + ", Sender: " + this.getSender() + ", Recipient: " + this.getRecipient() + "\n";
     }
 }
