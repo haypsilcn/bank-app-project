@@ -41,11 +41,11 @@ public abstract class Transfer extends Transaction {
     public Transfer(String newDate, double newAmount, String newDescription, String newSender, String newRecipient)  {
         this(newDate, newAmount, newDescription);
         if (newSender.equals(""))
-            this.sender = "unknown";
+            this.sender = "unknown sender";
         else
             this.sender = newSender;
         if (newSender.equals(""))
-            this.recipient = "unknown";
+            this.recipient = "unknown recipient";
         else
             this.recipient = newRecipient;
     }
@@ -53,7 +53,7 @@ public abstract class Transfer extends Transaction {
     public boolean equals(Object obj) {
         if (obj instanceof Transfer transfer)
             return (super.equals(transfer) && this.getSender().equals(transfer.getSender()) && this.getRecipient().equals(transfer.getRecipient()));
-        return  false;
+        return false;
     }
 
     public String toString() {

@@ -35,14 +35,14 @@ public class Payment extends Transaction {
      */
     public Payment(String newDate, double newAmount, String newDescription, double newIncomingInterest, double newOutgoingInterest) {
         this(newDate, newAmount, newDescription);
-        if (0 <= newIncomingInterest && newIncomingInterest < 1)
+        if (0 <= newIncomingInterest && newIncomingInterest <= 1)
             this.incomingInterest = newIncomingInterest;
         else
-            this.incomingInterest = 0;
-        if (0 <= newOutgoingInterest && newOutgoingInterest < 1)
+            this.incomingInterest = 0.5;
+        if (0 <= newOutgoingInterest && newOutgoingInterest <= 1)
             this.outgoingInterest = newOutgoingInterest;
         else
-            this.outgoingInterest = 0;
+            this.outgoingInterest = 0.5;
     }
 
     /**

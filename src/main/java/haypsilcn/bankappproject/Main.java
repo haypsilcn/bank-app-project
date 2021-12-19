@@ -1,22 +1,34 @@
 package haypsilcn.bankappproject;
 
-import bank.Payment;
-import bank.Transaction;
+import bank.*;
+import bank.exceptions.*;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Main {
-    public static void main(String[] args) throws ParseException {
-        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-//        String date = df.format(new Date("03-11-1990"));#
+    public static void main(String[] args) {
 
-        Date date = df.parse("32-12-1990");
-        System.out.println(df.format(date));
+        Bank bank = new Bank("", -1, 2);
+        /*try {
+            bank.getAccountBalance("");
+        } catch (AccountInvalidException e) {
+            System.out.println(e.getMessage());
+        }*/
 
+        try {
+            bank.createAccount("Gin");
+        } catch (AccountInvalidException | AccountAlreadyExistsException | IOException e) {
+            System.out.println(e.getMessage());
+        }
 
+        /*try {
+            bank.addTransaction("", new Payment("", 890, ""));
+        } catch (AccountDoesNotExistException | IOException | TransactionAlreadyExistsException e) {
+            System.out.println(e.getMessage());
+        }*/
     }
 }

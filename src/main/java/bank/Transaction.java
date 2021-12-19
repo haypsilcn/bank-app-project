@@ -43,8 +43,14 @@ public abstract class Transaction {
      * @param newDescription
      */
     public Transaction(String newDate, double newAmount, String newDescription) {
-        this.date = newDate;
-        this.description = newDescription;
+        if (newDate.equals(""))
+            this.date = new SimpleDateFormat().format(new Date());
+        else
+            this.date = newDate;
+        if (newDescription.equals(""))
+            this.description = "no description";
+        else
+            this.description = newDescription;
         this.amount = newAmount;
     }
 
