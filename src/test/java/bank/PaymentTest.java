@@ -1,5 +1,8 @@
 package bank;
 
+import bank.exceptions.customDateFormat.DayFormatInvalidException;
+import bank.exceptions.customDateFormat.MonthFormatInvalidException;
+import bank.exceptions.customDateFormat.YearFormatInvalidException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +14,7 @@ class PaymentTest {
     static Payment payment2;
 
     @BeforeAll
-    public static void setUp() {
+    public static void setUp() throws DayFormatInvalidException, MonthFormatInvalidException, YearFormatInvalidException {
         System.out.println("Set up for Payment objects");
         payment1 = new Payment("12-03-2008", 321, "Payment 01");
         payment2 = new Payment("23-09-1897", -2500,"Payment 02",  0.8, 0.5);
@@ -60,7 +63,7 @@ class PaymentTest {
 
     @Test
     public void toStringTester() {
-        String string = "Date: 23-09-1897, Amount: -3750.0 €, Description: Payment 02, Incoming interest: 0.8, Outgoing interest: 0.5\n";
+        String string = "CustomDateFormat: 23-09-1897, Amount: -3750.0 €, Description: Payment 02, Incoming interest: 0.8, Outgoing interest: 0.5\n";
         assertEquals(string, payment2.toString());
     }
 }

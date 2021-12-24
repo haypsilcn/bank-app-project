@@ -15,7 +15,7 @@ public class Bank {
      * name of Bank
      */
     private String name;
-    private String directory = "data";
+    private String directory;
     private double incomingInterest;
     private double outgoingInterest;
     private final Map<String, List<Transaction>> accountsToTransactions = new HashMap<>();
@@ -29,7 +29,7 @@ public class Bank {
     }
 
     public String getDirectory() {
-        return "src/main/resources/" + directory;
+        return "src/main/resources/data/" + this.getName();
     }
 
     public void setDirectory(String directory) {
@@ -100,7 +100,7 @@ public class Bank {
 
                     String str = customGson.toJson(jsonObject.get("INSTANCE"));
 
-                    if (jsonObject.get("CLASSNAME").getAsString().equals("Payment")) {
+                   if (jsonObject.get("CLASSNAME").getAsString().equals("Payment")) {
                         Payment payment = customGson.fromJson(str, Payment.class);
                         this.addTransaction(accountName, payment);
                     }
@@ -112,8 +112,8 @@ public class Bank {
                         OutgoingTransfer outgoingTransfer = customGson.fromJson(str, OutgoingTransfer.class);
                         this.addTransaction(accountName, outgoingTransfer);
                     }
-
                 }
+
                 reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -131,95 +131,95 @@ public class Bank {
         if (0 <= newIncomingInterest && newIncomingInterest <= 1)
             this.incomingInterest = newIncomingInterest;
         else
-            this.incomingInterest = 0.5;
+            this.incomingInterest = 0.5;                        // default incoming interest
         if (0 <= newOutgoingInterest && newOutgoingInterest <= 1)
             this.outgoingInterest = newOutgoingInterest;
         else
-            this.outgoingInterest = 0.5;
+            this.outgoingInterest = 0.5;                        // default outgoing interest
 
         try {
             Path path = Paths.get(this.getDirectory());
 
             if (Files.notExists(path)) {
                 Files.createDirectories(path);
-                System.out.println("\nDirectory for " + this.getName() + " is created!");
+                System.out.println("\nDirectory for <<" + this.getName() + ">> is created!\n");
             }
             else {
-                System.out.println("\nDirectory for " + this.getName() + " is already exist!");
-                System.out.println("=> Start reading account(s) from directory to " + this.getName() + ":");
+                System.out.println("\nDirectory for <<" + this.getName() + ">> is already exist!");
+                System.out.println("=> Start reading account(s) from directory to <<" + this.getName() + ">> ...");
                 readAccounts();
-                System.out.println("FINISHED reading account(s) for " + this.getName() + "\n");
+                System.out.println("FINISHED reading account(s) for <<" + this.getName() + ">>\n");
             }
         } catch (AccountInvalidException | AccountAlreadyExistsException | IOException e) {
-            System.out.println("Failed to create directory for " + this.getName() + "!");
+            System.out.println("Failed to create directory for <<" + this.getName() + ">> !");
         }
     }
 
     public void createAccount(String account) throws AccountAlreadyExistsException, IOException, AccountInvalidException {
 
         Path path = Path.of(this.getDirectory() + "/" + account + ".json");
-
+        System.out.println("Creating new account [" + account + "] to bank <<" + this.getName() + ">> ");
         if (Files.exists(path)) {
-            System.out.print("\nAdding <" + account + "> from data system to bank <" + this.getName() + "> " );
+            System.out.println("=> [" + account + "] is already in data system. Start adding to bank <<" + this.getName() + ">> ");
             if (accountsToTransactions.containsKey(account))
-                throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT <" + account + "> ALREADY EXISTS!\n");
+                throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT [" + account + "] ALREADY EXISTS!\n");
             else {
                 accountsToTransactions.put(account, List.of());
-                System.out.println("=> SUCCESS!");
+                System.out.println("=> SUCCESS!\n");
             }
         }
         else {
-            System.out.print("\nCreating new account <" + account + "> to bank <" + this.getName() + "> ");
             if (account.equals(""))
-                throw new AccountInvalidException("=> FAILED! ACCOUNT NAME CANNOT BE EMPTY!");
+                throw new AccountInvalidException("=> FAILED! ACCOUNT NAME CANNOT BE EMPTY!\n");
             accountsToTransactions.put(account, List.of());
             writeAccount(account);
-            System.out.println("=> SUCCESS!");
+            System.out.println("=> SUCCESS!\n");
         }
+
+
     }
 
     public void createAccount(String account, List<Transaction> transactionsList) throws AccountAlreadyExistsException, IOException, AccountInvalidException {
         Path path = Path.of(this.getDirectory() + "/" + account + ".json");
         String transactionsString = transactionsList.toString().replaceAll("[]]|[\\[]", "").replace("\n, ", "\n\t\t");
-
+        System.out.print("Creating new account [" + account + "] to bank <<" + this.getName() + ">> with transactions list: \n\t\t" + transactionsString);
         if (Files.exists(path)) {
-            System.out.print("\nAdding <" + account + "> from data system to bank <" + this.getName() + "> with transactions list: \n\t\t" + transactionsString);
+            System.out.println("=> [" + account + "] is already in data system. Start adding to bank <<" + this.getName() + ">> ");
             if (accountsToTransactions.containsKey(account))
-                throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT <" + account + "> ALREADY EXISTS!\n");
+                throw new AccountAlreadyExistsException("=> FAILED! ACCOUNT [" + account + "] ALREADY EXISTS!\n");
             else {
                 for (Transaction transaction : transactionsList)
                     setupTransaction(account, transaction);
-                accountsToTransactions.put(account, transactionsList);
-                System.out.println("=> SUCCESS!");
+                accountsToTransactions.put(account, List.of());
+                System.out.println("=> SUCCESS!\n");
             }
-        } else {
-            System.out.print("\nCreating new account <" + account + "> to bank <" + this.getName() + "> with transactions list: \n\t\t" + transactionsString);
-            if (account.equals(""))
-                throw new AccountInvalidException("=> FAILED! ACCOUNT NAME CANNOT BE EMPTY!");
-            for (Transaction transaction : transactionsList)
-                setupTransaction(account, transaction);
-            accountsToTransactions.put(account, transactionsList);
-            writeAccount(account);
-            System.out.println("=> SUCCESS!");
         }
+        if (account.equals(""))
+            throw new AccountInvalidException("=> FAILED! ACCOUNT NAME CANNOT BE EMPTY!\n");
+        for (Transaction transaction : transactionsList)
+            setupTransaction(account, transaction);
+        accountsToTransactions.put(account, transactionsList);
+        writeAccount(account);
+        System.out.println("=> SUCCESS!\n");
+
     }
 
     public void deleteAccount(String account) throws AccountDoesNotExistException, IOException {
-        System.out.print("\nDelete account <" + account + "> from bank <" + this.getName() + "> ");
+        System.out.println("Delete account [" + account + "] from bank <<" + this.getName() + ">> ");
         if (!accountsToTransactions.containsKey(account))
-            throw new AccountDoesNotExistException("=> FAILED! ACCOUNT <" + account + "> DOES NOT EXISTS!\n");
+            throw new AccountDoesNotExistException("=> FAILED! ACCOUNT [" + account + "] DOES NOT EXISTS!\n");
         else {
             accountsToTransactions.remove(account);
             Path path = Path.of(this.getDirectory() + "/" + account + ".json");
             Files.deleteIfExists(path);
-            System.out.println("=> SUCCESS!");
+            System.out.println("=> SUCCESS!\n");
         }
     }
 
     public void addTransaction(String account, Transaction transaction) throws AccountDoesNotExistException, IOException, TransactionAlreadyExistsException {
-        System.out.println("Adding new transaction <" + transaction.toString().replace("\n", "") + "> to account <" + account + "> in bank <" + this.getName() + ">");
+        System.out.println("Adding new transaction <" + transaction.toString().replace("\n", "") + "> to account [" + account + "] in bank <<" + this.getName() + ">>");
         if (!accountsToTransactions.containsKey(account))
-            throw new AccountDoesNotExistException("=> FAILED! ACCOUNT <" + account + "> DOES NOT EXISTS!\n");
+            throw new AccountDoesNotExistException("=> FAILED! ACCOUNT [" + account + "] DOES NOT EXISTS!\n");
         else {
             if (containsTransaction(account, transaction))
                 throw new TransactionAlreadyExistsException("=> FAILED! THIS TRANSACTION ALREADY EXISTS!\n");
@@ -228,14 +228,14 @@ public class Bank {
                 transactionsList.add(transaction);
                 accountsToTransactions.put(account, transactionsList);
                 writeAccount(account);
-                System.out.println("=> SUCCESS!");
+                System.out.println("=> SUCCESS!\n");
             }
         }
 
     }
 
     public void removeTransaction(String account, Transaction transaction) throws TransactionDoesNotExistException, IOException {
-        System.out.println("Removing transaction <" + transaction.toString().replace("\n", "") + "> from account <" + account + "> in bank <" + this.getName() + ">");
+        System.out.println("Removing transaction <" + transaction.toString().replace("\n", "") + "> from account [" + account + "] in bank <<" + this.getName() + ">>");
         if (!containsTransaction(account, transaction))
             throw new TransactionDoesNotExistException("=> FAILED! THIS TRANSACTION DOES NOT EXISTS!\n");
         else {
@@ -270,13 +270,11 @@ public class Bank {
     }
 
 
-    public double getAccountBalance(String account) throws AccountInvalidException {
-        if (account.equals(""))
-            throw new AccountInvalidException("=> FAILED! THIS TRANSACTION DOES NOT EXISTS!\n");
+    public double getAccountBalance(String account) {
         double balance = 0;
         for (Transaction transaction : accountsToTransactions.get(account))
             balance = balance + transaction.calculate();
-        System.out.println("Balance of account <" + account + "> in bank <" + this.getName() + "> : " + (double) Math.round(balance * 100) / 100 + "\n");
+        System.out.println("Balance of account [" + account + "] in bank <<" + this.getName() + ">> : " + (double) Math.round(balance * 100) / 100 + "\n");
         return (double) Math.round(balance * 100) / 100;
     }
 
@@ -287,9 +285,9 @@ public class Bank {
     public List<Transaction> getTransactionsByType(String account, boolean positive) {
         List<Transaction> transactionsListByType = new ArrayList<>();
         if (positive)
-            System.out.println("List of POSITIVE transactions of account <" + account + "> :");
+            System.out.println("List of POSITIVE transactions of account [" + account + "] :");
         else
-            System.out.println("List of NEGATIVE transactions of account <" + account + "> :");
+            System.out.println("List of NEGATIVE transactions of account [" + account + "] :");
         for (Transaction transaction : accountsToTransactions.get(account)) {
             if (positive && transaction.calculate() >= 0)
                 transactionsListByType.add(transaction);
@@ -306,10 +304,10 @@ public class Bank {
         List<Transaction> sortedTransactionsList = new ArrayList<>(accountsToTransactions.get(account));
         if (asc) {
             sortedTransactionsList.sort(Comparator.comparingDouble(Transaction::calculate));
-            System.out.println("Sorting transactions of account <" + account + "> by calculated amounts in ASCENDING order:\n" + sortedTransactionsList.toString().replace("[", "\t\t").replace("]", "").replace("\n, ", "\n\t\t"));
+            System.out.println("Sorting transactions of account [" + account + "] by calculated amounts in ASCENDING order:\n" + sortedTransactionsList.toString().replace("[", "\t\t").replace("]", "").replace("\n, ", "\n\t\t"));
         } else {
             sortedTransactionsList.sort(Comparator.comparingDouble(Transaction::calculate).reversed());
-            System.out.println("Sorting transactions of account <" + account + "> by calculated amounts in DESCENDING order:\n" + sortedTransactionsList.toString().replace("[", "\t\t").replace("]", "").replace("\n, ", "\n\t\t"));
+            System.out.println("Sorting transactions of account [" + account + "] by calculated amounts in DESCENDING order:\n" + sortedTransactionsList.toString().replace("[", "\t\t").replace("]", "").replace("\n, ", "\n\t\t"));
         }
         return sortedTransactionsList;
     }

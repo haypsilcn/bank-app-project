@@ -14,7 +14,10 @@ module haypsilcn.bankappproject {
     opens haypsilcn.bankappproject to javafx.fxml;
     opens bank;
     opens bank.exceptions;
+    opens bank.exceptions.customDateFormat;
+
     exports bank;
     exports bank.exceptions;
     exports haypsilcn.bankappproject;
+    exports bank.exceptions.customDateFormat;
 }

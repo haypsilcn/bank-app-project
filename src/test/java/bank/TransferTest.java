@@ -60,6 +60,6 @@ public class TransferTest {
 
     @Test
     public void toStringTester() {
-        assertEquals("Date: 30-07-2020, Amount: -1890.0 €, Description: OutgoingTransfer to Hagen, Sender: Elixir, Recipient: Hagen\n", outgoingTransfer.toString());
+        assertEquals("CustomDateFormat: 30-07-2020, Amount: -1890.0 €, Description: OutgoingTransfer to Hagen, Sender: Elixir, Recipient: Hagen\n", outgoingTransfer.toString());
     }
 }

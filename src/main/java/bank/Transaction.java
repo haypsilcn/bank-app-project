@@ -43,11 +43,7 @@ public abstract class Transaction {
      * @param newDescription
      */
     public Transaction(String newDate, double newAmount, String newDescription) {
-        if (newDate.equals(""))
-            this.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
-        else {
-            this.date = newDate;
-        }
+        this.date = newDate;
 
         if (newDescription.equals(""))
             this.description = "no description";
@@ -71,13 +67,6 @@ public abstract class Transaction {
      * @return
      */
     public String toString() {
-        DateFormat pattern = new SimpleDateFormat("dd-MM-yyyy");
-        Date formatDate = null;
-        try {
-            formatDate = pattern.parse(getDate());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return "Date: " + pattern.format(formatDate) + ", Amount: " + this.calculate() + " €, Description: " + this.getDescription();
+        return "Date: " + this.getDate() + ", Amount: " + this.calculate() + " €, Description: " + this.getDescription();
     }
 }
