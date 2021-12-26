@@ -48,7 +48,7 @@ public class Main {
 
 
 
-        try {
+        /*try {
             bank.createAccount("Tom");
         } catch (AccountInvalidException | AccountAlreadyExistsException | IOException e) {
             System.out.println(e.getMessage());
@@ -58,15 +58,16 @@ public class Main {
         } catch (AccountDoesNotExistException | TransactionAlreadyExistsException| IOException e) {
             System.out.println(e.getMessage());
         }
-//        try {
-//            bank.addTransaction("Tom",outgoingTransfer);
-//        } catch (AccountDoesNotExistException | TransactionAlreadyExistsException| IOException e) {
-//            System.out.println(e.getMessage());
-//        }
 
         try {
             bank.createAccount("Tom");
         } catch (AccountInvalidException | AccountAlreadyExistsException | IOException e) {
+            System.out.println(e.getMessage());
+        }*/
+
+        try {
+            bank.editAccount("Tim", "");
+        } catch (AccountInvalidException | AccountAlreadyExistsException | IOException | AccountDoesNotExistException e) {
             System.out.println(e.getMessage());
         }
         System.out.println(bank);

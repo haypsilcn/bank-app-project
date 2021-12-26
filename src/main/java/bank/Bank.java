@@ -216,6 +216,26 @@ public class Bank {
         }
     }
 
+    public void editAccount(String oldAccount, String newAccount) throws AccountInvalidException, AccountDoesNotExistException, AccountAlreadyExistsException, IOException {
+        System.out.println("Edit account [" + oldAccount + "] to [" + newAccount + "]");
+        if (newAccount.equals(""))
+            throw new AccountInvalidException("=> FAILED! NEW ACCOUNT NAME CANNOT BE EMPTY!\n");
+        else if (oldAccount.equals(newAccount))
+            throw new AccountInvalidException("=> FAILED! NEW ACCOUNT NAME CANNOT BE THE SAME AS OLD ACCOUNT NAME!\n");
+        else if (!accountsToTransactions.containsKey(oldAccount))
+            throw new AccountDoesNotExistException("=> FAILED! OLD ACCOUNT NAME [" + oldAccount + "] DOES NOT EXISTS!\n");
+        else if (accountsToTransactions.containsKey(newAccount))
+            throw new AccountAlreadyExistsException("=> FAILED! NEW ACCOUNT NAME [" + newAccount + "] ALREADY EXISTS!\n");
+        else {
+            List<Transaction> transactionList = new ArrayList<>(accountsToTransactions.get(oldAccount));
+            accountsToTransactions.put(newAccount, transactionList);
+            accountsToTransactions.remove(oldAccount);
+            Path path = Path.of(this.getDirectory() + "/" + oldAccount + ".json");
+            Files.move(path, path.resolveSibling(newAccount + ".json"));
+            System.out.println("=> SUCCESS!\n");
+        }
+    }
+
     public void addTransaction(String account, Transaction transaction) throws AccountDoesNotExistException, IOException, TransactionAlreadyExistsException {
         System.out.println("Adding new transaction <" + transaction.toString().replace("\n", "") + "> to account [" + account + "] in bank <<" + this.getName() + ">>");
         if (!accountsToTransactions.containsKey(account))

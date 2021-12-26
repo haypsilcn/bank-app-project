@@ -1,0 +1,19 @@
+[{
+  "CLASSNAME": "Payment",
+  "INSTANCE": {
+    "incomingInterest": 0.5,
+    "outgoingInterest": 0.5,
+    "date": "1-1-1990",
+    "amount": 90.0,
+    "description": "no description"
+  }
+},{
+  "CLASSNAME": "Payment",
+  "INSTANCE": {
+    "incomingInterest": 0.5,
+    "outgoingInterest": 0.5,
+    "date": "2-1-1990",
+    "amount": 190.0,
+    "description": "no description"
+  }
+}]
