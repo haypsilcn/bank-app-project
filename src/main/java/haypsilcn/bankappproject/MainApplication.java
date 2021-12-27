@@ -15,7 +15,7 @@ public class MainApplication extends Application {
 
         Parent fxmlLoader = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("main-view.fxml")));
         Scene scene = new Scene(fxmlLoader);
-        primaryStage.setTitle("MainViewApplication");
+        primaryStage.setTitle("Main View");
         primaryStage.setScene(scene);
         primaryStage.show();
 

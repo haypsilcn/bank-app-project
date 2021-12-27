@@ -15,16 +15,13 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainController implements Initializable {
@@ -32,15 +29,14 @@ public class MainController implements Initializable {
     private Stage stage;
     private Scene scene;
     private boolean success;
+    private boolean ascSort = true;
     private final AtomicReference<String> selectedAccount = new AtomicReference<>();
 
-    private final ObservableList<String> accountList = FXCollections.observableArrayList();
+    private final ObservableList<String> accountObservableList = FXCollections.observableArrayList();
     private final Bank globalBank = new Bank("Global Bank", 0.12, 0.09);
 
     @FXML
     public MenuBar menuBar;
-    @FXML
-    private Text text;
     @FXML
     private ListView<String> accountsListView;
     @FXML
@@ -52,21 +48,24 @@ public class MainController implements Initializable {
     }
 
 
-    private void updateListView() {
-        accountList.clear();
-        accountList.addAll(globalBank.getAllAccounts());
-        accountList.sort(Comparator.naturalOrder());
-        accountsListView.setItems(accountList);
+    private void updateListView(boolean ascending) {
+        accountObservableList.clear();
+        accountObservableList.addAll(globalBank.getAllAccounts());
+        if (ascending)
+            accountObservableList.sort(Comparator.naturalOrder());
+        else 
+            accountObservableList.sort(Comparator.reverseOrder());
+        accountsListView.setItems(accountObservableList);
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        updateListView();
+        updateListView(ascSort);    // ListView sorted in ascending as default when first run program
 
         // when first run the program, first account in the list will be selected
         // after that, a correct account will be selected when returning from Account-View
-        // i.e, returning from [Zack] Account-View so Zack will be automatic selected
+        // i.e, returning from [Zack] Account-View so Zack will be automatic selected in Main-View
         if (accountsListView.getSelectionModel().getSelectedIndex() == -1) {
             accountsListView.getSelectionModel().selectFirst();
             selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
@@ -80,43 +79,55 @@ public class MainController implements Initializable {
         Label goBack = new Label();
         goBack.setGraphic(goBackImg);
         Menu backArrow = new Menu();
+        backArrow.setDisable(true);     // go-back only enable in account view
         backArrow.setGraphic(goBack);
 
-        Menu viewMenu = new Menu("View");
+        Menu fileMenu = new Menu("File");
         MenuItem view = new MenuItem("View Account");
         MenuItem reload = new MenuItem("Reload");
+        MenuItem exit = new MenuItem("Exit");
 
-        viewMenu.getItems().addAll(view, reload);
+        fileMenu.getItems().addAll(view, reload, exit);
 
-        view.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCombination.ALT_DOWN));    // triggers account view when pressing the key combination ALT + V
+        view.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCombination.ALT_DOWN));            // triggers account view when pressing the key combination ALT + V
         reload.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.CONTROL_DOWN));      // triggers reload account list view when pressing key combination Ctrl + R
+        exit.setAccelerator(new KeyCodeCombination(KeyCode.F4, KeyCombination.ALT_DOWN));           // exit program when pressing ALT + F4
 
         reload.setOnAction(event -> {
-            final int selectedID = accountsListView.getSelectionModel().getSelectedIndex();
-            updateListView();
-            accountsListView.getSelectionModel().select(selectedID);        // auto re-select same row after reloading list view
-
+            updateListView(ascSort);
+            accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same row after reloading list view
+            System.out.println("ListView reloaded");
         });
-
         view.setOnAction(event -> {
-            stage = (Stage) root.getScene().getWindow();
 
-            try {
-                FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(getClass().getResource("account-view.fxml")));
-                root = loader.load();
+            if (accountsListView.getSelectionModel().getSelectedIndex() != -1) {
+                stage = (Stage) root.getScene().getWindow();
 
-                AccountController accountController = loader.getController();
-                accountController.setUpData(globalBank, selectedAccount.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(getClass().getResource("account-view.fxml")));
+                    root = loader.load();
+
+                    AccountController accountController = loader.getController();
+                    accountController.setUpData(globalBank, selectedAccount.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                scene = new Scene(root);
+                stage.setTitle(selectedAccount.toString());
+                stage.setScene(scene);
+                stage.show();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("There is no account to be viewed!");
+                alert.showAndWait();
             }
-
-
-            scene = new Scene(root);
-            stage.setTitle(selectedAccount.toString());
-            stage.setScene(scene);
-            stage.show();
         });
+        exit.setOnAction(event -> {
+            stage = (Stage) root.getScene().getWindow();
+            stage.close();
+        });
+
 
         Menu editMenu = new Menu("Edit");
         MenuItem add = new MenuItem("New Account");
@@ -132,13 +143,14 @@ public class MainController implements Initializable {
 
         add.setOnAction(event -> {
             Dialog<String> dialog = new Dialog<>();
-            dialog.setTitle("Add new account");
+            dialog.setTitle("New Account");
             dialog.setHeaderText("Add a new account to bank");
             dialog.getDialogPane().setMinWidth(300);
 
 
             Label nameLabel = new Label("Name: ");
             TextField nameTextFiel = new TextField();
+
 
             GridPane grid = new GridPane();
             grid.add(nameLabel, 1, 1);
@@ -150,7 +162,11 @@ public class MainController implements Initializable {
             ButtonType buttonTypeCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
             dialog.getDialogPane().getButtonTypes().addAll(buttonTypeOk, buttonTypeCancel);
 
+            dialog.show();
+            nameTextFiel.requestFocus();    // TextFiled of Name will be autofocused after dialog shows up
+
             dialog.setResultConverter(buttonType -> {
+
                 if (buttonType == buttonTypeOk) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
 
@@ -173,7 +189,7 @@ public class MainController implements Initializable {
                     }
 
                     if (success) {
-                        updateListView();
+                        updateListView(ascSort);
                         accountsListView.getSelectionModel().select(nameTextFiel.getText());
                         System.out.println(accountsListView.getSelectionModel().getSelectedItem());
                         selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
@@ -182,8 +198,6 @@ public class MainController implements Initializable {
                 }
                 return null;
             });
-
-            dialog.show();
         });
 
         edit.setOnAction(event -> {
@@ -205,6 +219,9 @@ public class MainController implements Initializable {
             ButtonType buttonTypeOk = new ButtonType("Okay", ButtonBar.ButtonData.OK_DONE);
             ButtonType buttonTypeCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
             dialog.getDialogPane().getButtonTypes().addAll(buttonTypeOk, buttonTypeCancel);
+
+            dialog.show();
+            nameTextFiel.requestFocus();
 
             dialog.setResultConverter(buttonType -> {
                 if (buttonType == buttonTypeOk) {
@@ -234,7 +251,7 @@ public class MainController implements Initializable {
                     }
 
                     if (success) {
-                        updateListView();
+                        updateListView(ascSort);
                         accountsListView.getSelectionModel().select(nameTextFiel.getText());
                         selectedAccount.set(nameTextFiel.getText());
                     } else
@@ -242,7 +259,6 @@ public class MainController implements Initializable {
                 }
                 return null;
             });
-            dialog.show();
         });
 
         delete.setOnAction(event -> {
@@ -259,6 +275,9 @@ public class MainController implements Initializable {
 
             final int selectedID = accountsListView.getSelectionModel().getSelectedIndex();
 
+            // check whether list view is empty or not
+            // if it is NOT empty then an element in list view can be deleted
+            // an Alert of Confirmation will be shown in this case
             if (accountsListView.getSelectionModel().getSelectedIndex() != -1) {
                 Optional<ButtonType> result = confirmation.showAndWait();
                 if (result.isPresent() && result.get() == confirm) {
@@ -277,23 +296,52 @@ public class MainController implements Initializable {
                     if (success) {
                         System.out.println(selectedAccount + " is deleted");
 
-                        updateListView();
-                        if (selectedID == 0)
+                        updateListView(ascSort);
+                        if (selectedID == 0)    // if first element is deleted, then first new element will be selected
                             accountsListView.getSelectionModel().select(selectedID);
-                        else
+                        else        // after an element is deleted, then the element above deleted element will be selected
                             accountsListView.getSelectionModel().select(selectedID - 1);
                         selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
                     }
                 }
-            } else {
+            }
+            // in case list view is EMPTY then no element can be deleted
+            // therefore an Alert of Error will be shown
+            else {
                 alert.setContentText("There is no account exist!");
                 alert.showAndWait();
             }
         });
 
+        Menu sorting = new Menu("Sorting");
+        RadioMenuItem ascending = new RadioMenuItem ("Ascending");
+        RadioMenuItem descending = new RadioMenuItem("Descending");
+        RadioMenuItem positive = new RadioMenuItem("Positive");
+        RadioMenuItem negative = new RadioMenuItem("Negative");
 
+        ToggleGroup toggleGroup = new ToggleGroup();
+        toggleGroup.getToggles().addAll(ascending, descending, positive, negative);
 
-        menuBar.getMenus().addAll(backArrow, editMenu, viewMenu);
+        sorting.getItems().addAll(ascending, descending, positive, negative);
+
+        ascending.setSelected(true);    // ascending sorting selected as default when first run program
+        ascending.setOnAction(event -> {
+            ascSort = true;     // list view will keep ascending order after reloading, deleting or adding new account
+            updateListView(true);
+            accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same item after changing sorting order of list view
+        });
+        descending.setOnAction(event -> {
+            ascSort = false;    // list view will keep descending order after reloading, deleting or adding new account
+            updateListView(false);
+            accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same item after changing sorting order of list view
+        });
+        // disable positive and negative sorting
+        // those only work in account view for sorting transactions
+        positive.setDisable(true);
+        negative.setDisable(true);
+
+        // add all menus to MenuBar
+        menuBar.getMenus().addAll(backArrow, fileMenu, editMenu, sorting);
 
 
         // when an account in list view is clicked
@@ -308,7 +356,7 @@ public class MainController implements Initializable {
                 MenuItem editAccount = new MenuItem("Edit account");
                 MenuItem deleteAccount = new MenuItem("Delete account");
 
-                contextMenu.getItems().addAll(viewAccount,editAccount, deleteAccount);
+                contextMenu.getItems().addAll(viewAccount, editAccount, deleteAccount);
                 accountsListView.setContextMenu(contextMenu);
                 selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
 
@@ -360,9 +408,12 @@ public class MainController implements Initializable {
 
                 addAccount.setOnAction(add.getOnAction());
             }
-
-
         });
 
+
+        // update selectedAccount when navigating list view elements by arrow keys
+        accountsListView.addEventHandler(KeyEvent.KEY_RELEASED, keyEvent ->
+           selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem())
+        );
     }
 }
