@@ -1,1 +1,19 @@
-[]
+[{
+  "CLASSNAME": "Payment",
+  "INSTANCE": {
+    "incomingInterest": 0.12,
+    "outgoingInterest": 0.09,
+    "date": "30-11-1999",
+    "amount": 1.0,
+    "description": "no description"
+  }
+},{
+  "CLASSNAME": "Payment",
+  "INSTANCE": {
+    "incomingInterest": 0.12,
+    "outgoingInterest": 0.09,
+    "date": "31-11-1999",
+    "amount": 1.0,
+    "description": "no description"
+  }
+}]

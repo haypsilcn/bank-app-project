@@ -29,7 +29,7 @@ public class MainController implements Initializable {
     private Stage stage;
     private Scene scene;
     private boolean success;
-    private boolean ascSort = true;
+    private boolean ascOrder = true;
     private final AtomicReference<String> selectedAccount = new AtomicReference<>();
 
     private final ObservableList<String> accountObservableList = FXCollections.observableArrayList();
@@ -61,7 +61,7 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        updateListView(ascSort);    // ListView sorted in ascending as default when first run program
+        updateListView(ascOrder);    // ListView sorted in ascending as default when first run program
 
         // when first run the program, first account in the list will be selected
         // after that, a correct account will be selected when returning from Account-View
@@ -94,7 +94,7 @@ public class MainController implements Initializable {
         exit.setAccelerator(new KeyCodeCombination(KeyCode.F4, KeyCombination.ALT_DOWN));           // exit program when pressing ALT + F4
 
         reload.setOnAction(event -> {
-            updateListView(ascSort);
+            updateListView(ascOrder);
             accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same row after reloading list view
             System.out.println("ListView reloaded");
         });
@@ -150,7 +150,11 @@ public class MainController implements Initializable {
 
             Label nameLabel = new Label("Name: ");
             TextField nameTextFiel = new TextField();
-
+            // TextField of name only accepts letters not numbers
+            nameTextFiel.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+                if (!newValue.matches("[a-zA-Z]*"))
+                    nameTextFiel.setText(oldValue);
+            }));
 
             GridPane grid = new GridPane();
             grid.add(nameLabel, 1, 1);
@@ -189,7 +193,7 @@ public class MainController implements Initializable {
                     }
 
                     if (success) {
-                        updateListView(ascSort);
+                        updateListView(ascOrder);
                         accountsListView.getSelectionModel().select(nameTextFiel.getText());
                         System.out.println(accountsListView.getSelectionModel().getSelectedItem());
                         selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
@@ -209,6 +213,11 @@ public class MainController implements Initializable {
 
             Label nameLabel = new Label("New name: ");
             TextField nameTextFiel = new TextField();
+            // TextField of name only accepts letters not numbers
+            nameTextFiel.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+                if (!newValue.matches("[a-zA-Z]*"))
+                    nameTextFiel.setText(oldValue);
+            }));
 
             GridPane grid = new GridPane();
             grid.add(nameLabel, 1, 1);
@@ -251,7 +260,7 @@ public class MainController implements Initializable {
                     }
 
                     if (success) {
-                        updateListView(ascSort);
+                        updateListView(ascOrder);
                         accountsListView.getSelectionModel().select(nameTextFiel.getText());
                         selectedAccount.set(nameTextFiel.getText());
                     } else
@@ -296,7 +305,7 @@ public class MainController implements Initializable {
                     if (success) {
                         System.out.println(selectedAccount + " is deleted");
 
-                        updateListView(ascSort);
+                        updateListView(ascOrder);
                         if (selectedID == 0)    // if first element is deleted, then first new element will be selected
                             accountsListView.getSelectionModel().select(selectedID);
                         else        // after an element is deleted, then the element above deleted element will be selected
@@ -318,27 +327,29 @@ public class MainController implements Initializable {
         RadioMenuItem descending = new RadioMenuItem("Descending");
         RadioMenuItem positive = new RadioMenuItem("Positive");
         RadioMenuItem negative = new RadioMenuItem("Negative");
+        RadioMenuItem default_ = new RadioMenuItem("Default");
 
         ToggleGroup toggleGroup = new ToggleGroup();
-        toggleGroup.getToggles().addAll(ascending, descending, positive, negative);
+        toggleGroup.getToggles().addAll(ascending, descending, positive, negative, default_);
 
-        sorting.getItems().addAll(ascending, descending, positive, negative);
+        sorting.getItems().addAll(ascending, descending, positive, negative, default_);
 
         ascending.setSelected(true);    // ascending sorting selected as default when first run program
         ascending.setOnAction(event -> {
-            ascSort = true;     // list view will keep ascending order after reloading, deleting or adding new account
+            ascOrder = true;     // list view will keep ascending order after reloading, deleting or adding new account
             updateListView(true);
             accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same item after changing sorting order of list view
         });
         descending.setOnAction(event -> {
-            ascSort = false;    // list view will keep descending order after reloading, deleting or adding new account
+            ascOrder = false;    // list view will keep descending order after reloading, deleting or adding new account
             updateListView(false);
             accountsListView.getSelectionModel().select(selectedAccount.toString());        // auto re-select same item after changing sorting order of list view
         });
-        // disable positive and negative sorting
+        // disable positive, negative and default sorting
         // those only work in account view for sorting transactions
         positive.setDisable(true);
         negative.setDisable(true);
+        default_.setDisable(true);
 
         // add all menus to MenuBar
         menuBar.getMenus().addAll(backArrow, fileMenu, editMenu, sorting);
