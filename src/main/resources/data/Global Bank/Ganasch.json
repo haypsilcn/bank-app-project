@@ -1,0 +1,28 @@
+[{
+  "CLASSNAME": "Payment",
+  "INSTANCE": {
+    "incomingInterest": 0.1,
+    "outgoingInterest": 0.2,
+    "date": "07-03-1980",
+    "amount": 1780.0,
+    "description": "Mietzahlung"
+  }
+},{
+  "CLASSNAME": "IncomingTransfer",
+  "INSTANCE": {
+    "sender": "Gmbh",
+    "recipient": "Ganasch",
+    "date": "08-11-1900",
+    "amount": 100.0,
+    "description": "Garden fee"
+  }
+},{
+  "CLASSNAME": "OutgoingTransfer",
+  "INSTANCE": {
+    "sender": "Ganasch",
+    "recipient": "Arina",
+    "date": "01-12-2019",
+    "amount": 2560.0,
+    "description": "Nov salary"
+  }
+}]

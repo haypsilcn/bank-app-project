@@ -174,31 +174,38 @@ public class MainController implements Initializable {
                 if (buttonType == buttonTypeOk) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
 
-                    try {
-                        globalBank.createAccount(nameTextFiel.getText());
-                        success = true;
-                    } catch (AccountAlreadyExistsException e) {
-                        alert.setContentText("Duplicated account!");
+                    if (nameTextFiel.getText().isEmpty()) {
+                        alert.setContentText("Please insert valid value!");
                         alert.showAndWait();
-                        success = false;
-                        System.out.println(e.getMessage());
-                    } catch (AccountInvalidException e) {
-                        alert.setContentText("Please insert a valid name!");
-                        alert.showAndWait();
-                        success = false;
-                        System.out.println(e.getMessage());
-                    } catch (IOException e) {
-                        success = false;
-                        e.printStackTrace();
-                    }
+                    } else {
+                        // capitalize the first letter of account name
+                        nameTextFiel.setText(nameTextFiel.getText().substring(0, 1).toUpperCase() + nameTextFiel.getText().substring(1));
 
-                    if (success) {
-                        updateListView(ascOrder);
-                        accountsListView.getSelectionModel().select(nameTextFiel.getText());
-                        System.out.println(accountsListView.getSelectionModel().getSelectedItem());
-                        selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
-                    } else
-                        accountsListView.getSelectionModel().select(selectedAccount.toString());
+                        try {
+                            globalBank.createAccount(nameTextFiel.getText());
+                            success = true;
+                        } catch (AccountAlreadyExistsException e) {
+                            alert.setContentText("Duplicated account!");
+                            alert.showAndWait();
+                            success = false;
+                            System.out.println(e.getMessage());
+                        } catch (AccountInvalidException e) {
+                            alert.setContentText("Please insert a valid name!");
+                            alert.showAndWait();
+                            success = false;
+                            System.out.println(e.getMessage());
+                        } catch (IOException e) {
+                            success = false;
+                            e.printStackTrace();
+                        }
+
+                        if (success) {
+                            updateListView(ascOrder);
+                            accountsListView.getSelectionModel().select(nameTextFiel.getText());
+                            selectedAccount.set(accountsListView.getSelectionModel().getSelectedItem());
+                        } else
+                            accountsListView.getSelectionModel().select(selectedAccount.toString());
+                    }
                 }
                 return null;
             });
@@ -234,37 +241,45 @@ public class MainController implements Initializable {
 
             dialog.setResultConverter(buttonType -> {
                 if (buttonType == buttonTypeOk) {
-
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    try {
-                        globalBank.editAccount(selectedAccount.toString(),nameTextFiel.getText());
-                        success = true;
-                    } catch (AccountAlreadyExistsException e) {
-                        alert.setContentText("New account name is duplicated!");
-                        alert.showAndWait();
-                        success = false;
-                        System.out.println(e.getMessage());
-                    } catch (AccountInvalidException e) {
-                        alert.setContentText("Please insert a valid name!");
-                        alert.showAndWait();
-                        success = false;
-                        System.out.println(e.getMessage());
-                    } catch (AccountDoesNotExistException e) {
-                        alert.setContentText("Account is not exist to be edited!");
-                        alert.showAndWait();
-                        success = false;
-                        System.out.println(e.getMessage());
-                    } catch (IOException e) {
-                        success = false;
-                        e.printStackTrace();
-                    }
 
-                    if (success) {
-                        updateListView(ascOrder);
-                        accountsListView.getSelectionModel().select(nameTextFiel.getText());
-                        selectedAccount.set(nameTextFiel.getText());
-                    } else
-                        accountsListView.getSelectionModel().select(selectedAccount.toString());
+                    if (nameTextFiel.getText().isEmpty()) {
+                        alert.setContentText("Please insert valid value!");
+                        alert.showAndWait();
+                    } else {
+                        // capitalize the first letter of account name
+                        nameTextFiel.setText(nameTextFiel.getText().substring(0, 1).toUpperCase() + nameTextFiel.getText().substring(1));
+
+                        try {
+                            globalBank.editAccount(selectedAccount.toString(),nameTextFiel.getText());
+                            success = true;
+                        } catch (AccountAlreadyExistsException e) {
+                            alert.setContentText("New account name is duplicated!");
+                            alert.showAndWait();
+                            success = false;
+                            System.out.println(e.getMessage());
+                        } catch (AccountInvalidException e) {
+                            alert.setContentText("Please insert a valid name!");
+                            alert.showAndWait();
+                            success = false;
+                            System.out.println(e.getMessage());
+                        } catch (AccountDoesNotExistException e) {
+                            alert.setContentText("Account is not exist to be edited!");
+                            alert.showAndWait();
+                            success = false;
+                            System.out.println(e.getMessage());
+                        } catch (IOException e) {
+                            success = false;
+                            e.printStackTrace();
+                        }
+
+                        if (success) {
+                            updateListView(ascOrder);
+                            accountsListView.getSelectionModel().select(nameTextFiel.getText());
+                            selectedAccount.set(nameTextFiel.getText());
+                        } else
+                            accountsListView.getSelectionModel().select(selectedAccount.toString());
+                    }
                 }
                 return null;
             });
@@ -384,6 +399,7 @@ public class MainController implements Initializable {
 
                         stage = (Stage) ((Node) mouseEvent.getSource()).getScene().getWindow();
                         scene = new Scene(root);
+                        stage.setTitle(selectedAccount.toString());
                         stage.setScene(scene);
                         stage.show();
                     } catch (IOException e) {

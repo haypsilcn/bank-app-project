@@ -8,7 +8,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -34,6 +33,7 @@ public class AccountController /*implements Initializable*/ {
     private Scene scene;
     private boolean ascOrder;
     private boolean defaultOrder = true;
+    private MenuItem currentSorting;
 
     @FXML
     public Text accountNameTextField;
@@ -44,14 +44,14 @@ public class AccountController /*implements Initializable*/ {
     @FXML
     public AnchorPane root;
 
-    private boolean checkValidDateFormat(TextField day, TextField month, TextField year) {
+    private boolean checkInvalidDateFormat(TextField day, TextField month, TextField year) {
         // 1900 < year <= 2050
         if (Integer.parseInt(year.getText()) < 1900 || Integer.parseInt(year.getText()) > 2050)
-            return false;
+            return true;
         else {
             // 1 <= month <= 12
             if (Integer.parseInt(month.getText()) < 1 || Integer.parseInt(month.getText()) > 12)
-                return false;
+                return true;
             else {
               if (Integer.parseInt(month.getText()) == 1 ||
                         Integer.parseInt(month.getText()) == 3 ||
@@ -60,14 +60,14 @@ public class AccountController /*implements Initializable*/ {
                         Integer.parseInt(month.getText()) == 8 ||
                         Integer.parseInt(month.getText()) == 10 ||
                         Integer.parseInt(month.getText()) == 12)
-                    return Integer.parseInt(day.getText()) >= 1 && Integer.parseInt(day.getText()) <= 31;
+                    return Integer.parseInt(day.getText()) < 1 || Integer.parseInt(day.getText()) > 31;
               else if (Integer.parseInt(month.getText()) == 4 ||
                       Integer.parseInt(month.getText()) == 6 ||
                       Integer.parseInt(month.getText()) == 9 ||
                       Integer.parseInt(month.getText()) == 11)
-                    return Integer.parseInt(day.getText()) >= 1 && Integer.parseInt(day.getText()) <= 30;
+                    return Integer.parseInt(day.getText()) < 1 || Integer.parseInt(day.getText()) > 30;
               else
-                    return Integer.parseInt(day.getText()) >= 1 && Integer.parseInt(day.getText()) <= 28;
+                    return Integer.parseInt(day.getText()) < 1 || Integer.parseInt(day.getText()) > 28;
             }
         }
     }
@@ -120,11 +120,6 @@ public class AccountController /*implements Initializable*/ {
             if (!newValue.matches("\\d{0,4}"))
                 yearText.setText(oldValue);
         }));
-        // TextField of amount accepts decimal number with max 2 decimal points allow
-        amountText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*(\\.\\d{0,2})?"))
-                amountText.setText(oldValue);
-        }));
 
         GridPane gridPane = new GridPane();
         GridPane dateGridPane = new GridPane();
@@ -164,6 +159,12 @@ public class AccountController /*implements Initializable*/ {
                         textField.setText(oldValue);
                 }));
             }
+            // TextField of amount accepts positive and negative decimal number with max 2 decimal points allow
+            amountText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+                if (!newValue.matches("-?\\d*(\\.\\d{0,2})?"))
+                    amountText.setText(oldValue);
+            }));
+
             dialog.setTitle("New Payment");
             dialog.setHeaderText("Add new payment to account [" + name + "]");
 
@@ -179,11 +180,28 @@ public class AccountController /*implements Initializable*/ {
                         invalid.setContentText("Please insert valid value!");
                         invalid.showAndWait();
                     } else {
-                        if (!checkValidDateFormat(dayText, monthText, yearText)) {
+                        if (checkInvalidDateFormat(dayText, monthText, yearText)) {
                             invalid.setContentText("Please insert valid date!");
                             invalid.showAndWait();
                         }
                         else {
+                            // avoid exception when click OK while incoming and outgoing interest fields are empty
+                            if (incomingInterest_senderText.getText().isEmpty())
+                                incomingInterest_senderText.setText("0");
+                            if (outgoingInterest_recipientText.getText().isEmpty())
+                                outgoingInterest_recipientText.setText("0");
+
+                            // to pretty print day and month if they're between [1,9]
+                            // i.e, 1 -> 01
+                            if (1 <= Integer.parseInt(dayText.getText()) && Integer.parseInt(dayText.getText()) <= 9)
+                                dayText.setText("0" + dayText.getText());
+                            if (1 <= Integer.parseInt(monthText.getText()) && Integer.parseInt(monthText.getText()) <= 9)
+                                monthText.setText("0" + monthText.getText());
+
+                            // capitalize the first letter of text in description field when it's not empty
+                            if (!descriptionText.getText().isEmpty())
+                                descriptionText.setText(descriptionText.getText().substring(0, 1).toUpperCase() + descriptionText.getText().substring(1));
+
                             Payment payment = new Payment(dayText.getText() + "-" + monthText.getText() + "-" + yearText.getText(),
                                     Double.parseDouble(amountText.getText()),
                                     descriptionText.getText(),
@@ -200,9 +218,12 @@ public class AccountController /*implements Initializable*/ {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                            updateListView(bank.getTransactions(name));
+                            updateListView(bank, name, currentSorting);
                             accountNameTextField.setText(name + " [" + bank.getAccountBalance(name) + "€]");
-                            transactionsListView.getSelectionModel().select(payment);
+                            if (transactionsList.contains(payment))
+                                transactionsListView.getSelectionModel().select(payment);
+                            else
+                                transactionsListView.getSelectionModel().selectFirst();
                             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
                         }
                     }
@@ -220,6 +241,12 @@ public class AccountController /*implements Initializable*/ {
                         textField.setText(oldValue);
                 }));
             }
+            // TextField of amount accepts only positive decimal number with max 2 decimal points allow
+            amountText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+                if (!newValue.matches("\\d*(\\.\\d{0,2})?"))
+                    amountText.setText(oldValue);
+            }));
+
             if (menuItem.getText().equals("Incoming Transfer")) {
                 // for a new incoming transfer of an account X, X is the recipient
                 // therefore the TextField of recipient should not be edited
@@ -239,12 +266,25 @@ public class AccountController /*implements Initializable*/ {
                             invalid.setContentText("Please insert valid value!");
                             invalid.showAndWait();
                         } else {
-                            if (checkValidDateFormat(dayText, monthText, yearText)) {
+                            if (checkInvalidDateFormat(dayText, monthText, yearText)) {
                                 invalid.setContentText("Please insert valid date!");
                                 invalid.showAndWait();
                             }
                             else {
-                                IncomingTransfer incomingTransfer = new IncomingTransfer(dayText.getText(),
+                                // to pretty print day and month if they're between [1,9]
+                                // i.e, 1 -> 01
+                                if (1 <= Integer.parseInt(dayText.getText()) && Integer.parseInt(dayText.getText()) <= 9)
+                                    dayText.setText("0" + dayText.getText());
+                                if (1 <= Integer.parseInt(monthText.getText()) && Integer.parseInt(monthText.getText()) <= 9)
+                                    monthText.setText("0" + monthText.getText());
+
+                                // capitalize the first letter of text in description field when it's not empty
+                                if (!descriptionText.getText().isEmpty())
+                                    descriptionText.setText(descriptionText.getText().substring(0, 1).toUpperCase() + descriptionText.getText().substring(1));
+                                // capitalize the first letter of text in sender field
+                                incomingInterest_senderText.setText(incomingInterest_senderText.getText().substring(0, 1).toUpperCase() + incomingInterest_senderText.getText().substring(1));
+
+                                IncomingTransfer incomingTransfer = new IncomingTransfer(dayText.getText() + "-" + monthText.getText() + "-" + yearText.getText(),
                                         Double.parseDouble(amountText.getText()),
                                         descriptionText.getText(),
                                         incomingInterest_senderText.getText(),
@@ -260,9 +300,12 @@ public class AccountController /*implements Initializable*/ {
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-                                updateListView(bank.getTransactions(name));
+                                updateListView(bank, name, currentSorting);
                                 accountNameTextField.setText(name + " [" + bank.getAccountBalance(name) + "€]");
-                                transactionsListView.getSelectionModel().select(incomingTransfer);
+                                if (transactionsList.contains(incomingTransfer))
+                                    transactionsListView.getSelectionModel().select(incomingTransfer);
+                                else
+                                    transactionsListView.getSelectionModel().selectFirst();
                                 selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
                             }
                         }
@@ -288,12 +331,24 @@ public class AccountController /*implements Initializable*/ {
                             invalid.setContentText("Please insert valid value!");
                             invalid.showAndWait();
                         } else {
-                            if (checkValidDateFormat(dayText, monthText, yearText)) {
+                            if (checkInvalidDateFormat(dayText, monthText, yearText)) {
                                 invalid.setContentText("Please insert valid date!");
                                 invalid.showAndWait();
                             }
                             else {
-                                OutgoingTransfer outgoingTransfer = new OutgoingTransfer(dayText.getText(),
+                                // to pretty print day and month if they're between [1,9]
+                                // i.e, 1 -> 01
+                                if (1 <= Integer.parseInt(dayText.getText()) && Integer.parseInt(dayText.getText()) <= 9)
+                                    dayText.setText("0" + dayText.getText());
+                                if (1 <= Integer.parseInt(monthText.getText()) && Integer.parseInt(monthText.getText()) <= 9)
+                                    monthText.setText("0" + monthText.getText());
+                                // capitalize the first letter of text in description field when it's not empty
+                                if (!descriptionText.getText().isEmpty())
+                                    descriptionText.setText(descriptionText.getText().substring(0, 1).toUpperCase() + descriptionText.getText().substring(1));
+                                // capitalize the first letter of text in recipient field
+                                outgoingInterest_recipientText.setText(outgoingInterest_recipientText.getText().substring(0, 1).toUpperCase() + outgoingInterest_recipientText.getText().substring(1));
+
+                                OutgoingTransfer outgoingTransfer = new OutgoingTransfer(dayText.getText() + "-" + monthText.getText() + "-" + yearText.getText(),
                                         Double.parseDouble(amountText.getText()),
                                         descriptionText.getText(),
                                         incomingInterest_senderText.getText(),
@@ -309,9 +364,12 @@ public class AccountController /*implements Initializable*/ {
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-                                updateListView(bank.getTransactions(name));
+                                updateListView(bank, name, currentSorting);
                                 accountNameTextField.setText(name + " [" + bank.getAccountBalance(name) + "€]");
-                                transactionsListView.getSelectionModel().select(outgoingTransfer);
+                                if (transactionsList.contains(outgoingTransfer))
+                                    transactionsListView.getSelectionModel().select(outgoingTransfer);
+                                else
+                                    transactionsListView.getSelectionModel().selectFirst();
                                 selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
                             }
                         }
@@ -322,20 +380,22 @@ public class AccountController /*implements Initializable*/ {
         }
     }
 
-    private void updateListView(List<Transaction> listTransaction) {
+    private void updateListView(Bank bank, String account, MenuItem sortingMenuItem) {
         transactionsList.clear();
-        transactionsList.addAll(listTransaction);
+        if (sortingMenuItem.getText().equals("Default"))
+            transactionsList.addAll(bank.getTransactions(account));
+        else if (sortingMenuItem.getText().equals("Ascending"))
+            transactionsList.addAll(bank.getTransactionsSorted(account, true));
+        else if (sortingMenuItem.getText().equals("Descending"))
+            transactionsList.addAll(bank.getTransactionsSorted(account, false));
+        else if (sortingMenuItem.getText().equals("Positive"))
+            transactionsList.addAll(bank.getTransactionsByType(account, true));
+        else if (sortingMenuItem.getText().equals("Negative"))
+            transactionsList.addAll(bank.getTransactionsByType(account, false));
         transactionsListView.setItems(transactionsList);
     }
 
     public void setUpData(Bank bankFromPreController, String account) {
-
-        bank = bankFromPreController;
-        accountNameTextField.setText(account + " [" + bank.getAccountBalance(account) + "€]");
-        updateListView(bank.getTransactions(account));
-
-        transactionsListView.getSelectionModel().selectFirst();
-        selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
 
         // setting menu bar
         ImageView goBackImg = new ImageView("file:src/main/resources/img/back-arrow.png");
@@ -354,7 +414,7 @@ public class AccountController /*implements Initializable*/ {
                 e.printStackTrace();
             }
             Stage stage = (Stage)((Node) event.getSource()).getScene().getWindow();
-            stage.setTitle("MainView");
+            stage.setTitle("Main View");
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
@@ -394,7 +454,7 @@ public class AccountController /*implements Initializable*/ {
         });
         reload.setOnAction(event -> {
             final int selectedID = transactionsListView.getSelectionModel().getSelectedIndex();
-            updateListView(bank.getTransactions(account));
+            updateListView(bank, account, currentSorting);
             transactionsListView.getSelectionModel().select(selectedID);
         });
 
@@ -414,27 +474,44 @@ public class AccountController /*implements Initializable*/ {
         incomingTransfer.setOnAction(event -> setUpDialogAddTransaction(incomingTransfer, account));
         outgoingTransfer.setOnAction(event -> setUpDialogAddTransaction(outgoingTransfer, account));
         delete.setOnAction(event -> {
-            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+            ButtonType confirm = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "", confirm, cancel );
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+
             confirmation.setTitle("Delete transaction confirmation");
-            confirmation.setContentText("Do you wanna delete this transaction?");
-            Optional<ButtonType> result = confirmation.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                try {
-                    bank.removeTransaction(account, selectedTransaction.get());
-                } catch (TransactionDoesNotExistException | IOException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("[" + selectedTransaction.toString().replace("\n", "]") + " is deleted");
-                if (defaultOrder)
-                    updateListView(bank.getTransactions(account));
-                else {
-                    if (ascOrder)
-                        updateListView(bank.getTransactionsSorted(account, true));
+            confirmation.setHeaderText("[" + selectedTransaction.toString().replace("\n", "") + "] will be deleted");
+            confirmation.setContentText("Please confirm");
+
+            final int selectedID = transactionsListView.getSelectionModel().getSelectedIndex();
+
+            if (transactionsListView.getSelectionModel().getSelectedIndex() != -1) {
+                Optional<ButtonType> result = confirmation.showAndWait();
+                if (result.isPresent() && result.get() == confirm) {
+                    try {
+                        bank.removeTransaction(account, selectedTransaction.get());
+                    } catch (TransactionDoesNotExistException e) {
+                        System.out.println(e.getMessage());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("[" + selectedTransaction.toString().replace("\n", "]") + " is deleted");
+
+                    updateListView(bank, account, currentSorting);
+                    accountNameTextField.setText(account + " [" + bank.getAccountBalance(account) + "€]");
+
+                    if (selectedID == 0)
+                        transactionsListView.getSelectionModel().select(selectedID);
                     else
-                        updateListView(bank.getTransactionsSorted(account, false));
+                        transactionsListView.getSelectionModel().select(selectedID - 1);
+                    selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
                 }
-                accountNameTextField.setText(account + " [" + bank.getAccountBalance(account) + "€]");
+            } else {
+                alert.setContentText("No transaction is selected! Please check again.");
+                alert.showAndWait();
             }
+
         });
 
         Menu sorting = new Menu("Sorting");
@@ -449,33 +526,41 @@ public class AccountController /*implements Initializable*/ {
 
         sorting.getItems().addAll(ascending, descending, positive, negative, default_);
 
-        default_.setSelected(true);    // default sorting selected as default when first open account view
+        // default sorting selected as default when first open account view
+        default_.setSelected(true);
+        currentSorting = default_;
+
         ascending.setOnAction(event -> {
             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
             defaultOrder = false;
             ascOrder = true;     // list view will keep ascending order after reloading, deleting or adding new account
-            updateListView(bank.getTransactionsSorted(account, true));
+            currentSorting = ascending;
+            updateListView(bank, account, currentSorting);
             transactionsListView.getSelectionModel().select(selectedTransaction.get());        // auto re-select same item after changing sorting order of list view
         });
         descending.setOnAction(event -> {
             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
             defaultOrder = false;
             ascOrder = false;    // list view will keep descending order after reloading, deleting or adding new account
-            updateListView(bank.getTransactionsSorted(account, false));
+            currentSorting = descending;
+            updateListView(bank, account, currentSorting);
             transactionsListView.getSelectionModel().select(selectedTransaction.get());        // auto re-select same item after changing sorting order of list view
         });
         positive.setOnAction(event -> {
             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
-            updateListView(bank.getTransactionsByType(account, true));
+            currentSorting = positive;
+            updateListView(bank, account, currentSorting);
             if (bank.getTransactionsByType(account, true).contains(selectedTransaction.get()))
                 transactionsListView.getSelectionModel().select(selectedTransaction.get());
             else {
                 transactionsListView.getSelectionModel().selectFirst();
                 selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
-            }        });
+            }
+        });
         negative.setOnAction(event -> {
             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
-            updateListView(bank.getTransactionsByType(account, false));
+            currentSorting = negative;
+            updateListView(bank, account, currentSorting);
             if (bank.getTransactionsByType(account, false).contains(selectedTransaction.get()))
                 transactionsListView.getSelectionModel().select(selectedTransaction.get());
             else {
@@ -487,12 +572,26 @@ public class AccountController /*implements Initializable*/ {
             selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
             defaultOrder = true;
             ascOrder = false;
-            updateListView(bank.getTransactions(account));
+            currentSorting = default_;
+            updateListView(bank, account, currentSorting);
             transactionsListView.getSelectionModel().select(selectedTransaction.get());
         });
 
 
         menuBar.getMenus().addAll(backArrow, fileMenu, editMenu, sorting);
+
+        // getting data of selected account from MainController
+        bank = bankFromPreController;
+        accountNameTextField.setText(account + " [" + bank.getAccountBalance(account) + "€]");
+
+        updateListView(bank, account, currentSorting);
+
+        transactionsListView.getSelectionModel().selectFirst();
+        selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
+
+        transactionsListView.setOnMouseClicked(event -> {
+            selectedTransaction.set(transactionsListView.getSelectionModel().getSelectedItem());
+        });
     }
 
     /*@Override
@@ -520,6 +619,7 @@ public class AccountController /*implements Initializable*/ {
         Menu backArrow = new Menu();
         backArrow.setAccelerator(new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_ANY));
         backArrow.setGraphic(goBack);
+
 
         menuBar.getMenus().addAll(backArrow);
 
