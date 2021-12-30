@@ -20,9 +20,9 @@
   "CLASSNAME": "OutgoingTransfer",
   "INSTANCE": {
     "sender": "Ganasch",
-    "recipient": "disney",
-    "date": "01-12-2009",
-    "amount": 1890.0,
-    "description": "Salary nov"
+    "recipient": "Arina",
+    "date": "01-12-2019",
+    "amount": 2560.0,
+    "description": "Nov salary"
   }
 }]
